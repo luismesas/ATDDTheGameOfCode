@@ -142,8 +142,64 @@ Even though the unit tests are passing we still need to register the endpoint in
     }
 
 
-There are things that can not be tested by acceptance tests. Like the next function needed in restify. If we put it into the acceptance tests (like a step!) we would get coupled to the http library used in strajah. 
+There are things that can not be tested by acceptance tests. Like the next function needed in restify. It is an implementation requirement and should be only known to the unit tests.
+If we put it into the acceptance tests (like a step!) we would get coupled to the http library used in strajah. 
 The idea of acceptance tests for servers (using an API Rest interface) should be to make the glue code of the tests in another language, like Ruby, and they should still be green.
+
+With this the acceptance tests are almost done... One step left.
+
+
+### Fourth step: And the response body has "accessToken" property
+
+The glue code for this step is pretty easy
+
+    this.getValue('body').should.include.keys(propertyName);
+
+It will fail as for now strajah sends back only a 200 response code, with no body. We write the unit test for this
+
+    it('has an accessToken property', function () {
+        let obtainedBody;
+
+        let res = {
+            send: function(statusCode, body){
+                obtainedBody = body;
+            }
+        };
+
+        loginMiddleware(null, res, function(){});
+        obtainedBody.should.include.keys('accessToken');
+    });   
+
+And the login function becomes
+
+    function login (request, response, next){
+        let body = {
+            accessToken: '123abc'
+        };
+        response.send(200, body);
+        return next();
+    }
+
+Instead of the restify method send we are going to use the method json, which does the same thing but also sets a header of content-type: application/json.
+For that we must first change the mocks of the unit tests
+
+    let res = {
+        json: function(){}
+    };
+
+and only after this is done we can change the login function itself.
+
+
+Basic login feature completed! We have a login endpoint that sends back a 200 response code and a static token. That should be enough for the registration step we started doing in the first place.
+
+Since all tests are green - commit.
+
+
+
+
+
+
+
 
 
 
