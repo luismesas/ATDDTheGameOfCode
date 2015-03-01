@@ -15,6 +15,7 @@ The registration feature just expects a 201 response code, and so that's ALL str
 
 Adding a second step to check if the customer can log in after registration sounds like a good idea. 
 
+```
   Scenario: Successful registration
     When a not registered user requests to register with data
       | user name | password |
@@ -23,7 +24,7 @@ Adding a second step to check if the customer can log in after registration soun
     And the customer is able to log in with his credentials
       | user name | password |
       | Ironman   | Av3ng3Rs |
-    
+```    
 
 That looks good enough, problem is, we do not know what it means to be logged in. 
 
@@ -31,6 +32,7 @@ That looks good enough, problem is, we do not know what it means to be logged in
 
 Let's add another feature to describe that. We haven't writen a single line of code yet.
 
+```
   Scenario: Customer logs in successfully
     Given a registrated customer with data
       | user name | password |
@@ -38,7 +40,7 @@ Let's add another feature to describe that. We haven't writen a single line of c
     When the customer "Ironman" logs in with password "Av3ng3Rs"
     Then the response code must be 200
     And the response body has "accessToken" property
-    
+```    
 
 For now that should be ok. Now we have a pretty good idea of want we have to do. 
 In ATDD we always start by writing the glue code, that is, the step definitions.
@@ -197,18 +199,107 @@ Since all tests are green - commit.
 
 
 
+## Returning to the registration feature
+
+We left back a step in the registration process
+
+```
+And the customer is able to log in with his credentials
+  | user name | password |
+  | Ironman   | Av3ng3Rs |
+```
+
+Since now we know what it means to be logged in let's implement that step. The glue code now is is made up of a POST request to the login endpoint and verification that the response status code is 200. We'll leave to the login feature to check all the rest of the request.
+
+This step doesn't need any extra code, so no unit tests for this one.
+
+## Registration: secondary paths
+
+For now we have a lot a acceptance and unit tests and a simple security layer that doesn't even save the registration data... and always allows login! That doesn't seem like a good security layer at all.
+
+Let's add some secondary paths and see if it gets any better.
 
 
+### Scenario: Unsuccessful registration - already registered customer with the same name
+
+Now we want to force strajah to store the registered customer so we write the following scenario
+We'll reuse most of the steps implemented previously
+
+```
+Scenario: Unsuccessful registration - already registered customer with the same name
+  Given a registered customer with data
+    | user name | password |
+    | Ironman   | Av3ng3Rs |
+  When a not registered user requests to register with data
+    | user name | password     |
+    | Ironman   | I'm a clon!  |
+  Then the response code must be 401
+  And the customer is not able to log in with his credentials
+    | user name | password |
+    | Ironman   | Av3ng3Rs |
+```
+
+First failure we find: AssertionError: expected 201 to deeply equal 401
+
+There no validation of the username at registration. We'll start by saving the customers names and passwords inside some storage as first approximation to solve the problem.
+
+Since the first registration unit tests were writen with promises we'll continue to use them for the following unit tests. For the first one will supose that there's a 'retrieveFromStorage.js' that return all stored customers (without searches or filtering).
 
 
+    it('Should return 401 when a customer exists with the same name', function () {
+        const request = mockRequest(),
+            response = mockResponse();
+
+        let deferred = q.defer();
+        let promise = deferred.promise;
+
+        let retrieveFromStorageStub = sinon.stub();
+        retrieveFromStorageStub.returns(promise);
+
+        let responseSpy = sinon.spy(response, 'json');
+
+        let registrationMiddleware = createRegistrationMiddleware(retrieveFromStorageStub);
+        registrationMiddleware(request, response, function () {});
+
+        let fulfilledPromise = promise.then(function () {
+            let statusCode = responseSpy.args[0][0];
+            statusCode.should.deep.equal(401);
+        });
+
+        let storageResponse = [
+            {
+                name: 'user1'
+            }
+        ];
+        deferred.resolve(storageResponse);
+
+        return fulfilledPromise;
+    });
 
 
+The function createRegistrationMiddleware gets a mock and uses it instead of the 'retrieveFromStorage.js'. 
+
+Keep in mind that we still haven't created the retrieveFromStorage file, but we're mocking it with the interface we want it to have, that is, an array of maps containing a name property each one.
+
+We can modify the registration middleware in order to fulfill the test
 
 
+    retrieveCustomers().then(function (customers) {
+        let filteredCustomers = _.filter(customers, function (retrievedCustomer) {
+            return retrievedCustomer.name === request.body.name;
+        });
+
+        if (!_.isEmpty(filteredCustomers)) {
+            response.json(401);
+            return next();
+        }
+        
+        response.json(201, 'ok');
+        next();
+    });
 
 
-
-
+We have one last thing to add to the registration middleware: the storage of the registrated customers.
 
 
 
