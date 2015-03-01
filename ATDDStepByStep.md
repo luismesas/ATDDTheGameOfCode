@@ -1,11 +1,11 @@
 Let's assume you've already read some ATDD philosophy articles, you're already convinced that it is the rigth way to code but now you want to see it in action.
 
-We'll use (Strajah)[https://github.com/strajah/strajah] as an example. The successor of cipherlayer, a security layer based on Oauth 2. Strajah is build from scratch, so pretty we have some work to do until it can replace cipherlayer, feel free to contribute using your ATDD skills adquired in this tutorial.
+We'll use [Strajah](https://github.com/strajah/strajah) as an example. The successor of cipherlayer, a security layer based on Oauth 2. Strajah is build from scratch, so pretty we have some work to do until it can replace cipherlayer, feel free to contribute using your ATDD skills adquired in this tutorial.
 
 
 
 
-Start at the tag https://github.com/strajah/strajah/tree/ATDD-theGameOfCode
+Start at [this tag](https://github.com/strajah/strajah/tree/ATDD-theGameOfCode)
 
 
 # Doing a real registration process
@@ -15,7 +15,7 @@ The registration feature just expects a 201 response code, and so that's ALL str
 
 Adding a second step to check if the customer can log in after registration sounds like a good idea. 
 
-```
+```Cucumber
   Scenario: Successful registration
     When a not registered user requests to register with data
       | user name | password |
@@ -32,7 +32,7 @@ That looks good enough, problem is, we do not know what it means to be logged in
 
 Let's add another feature to describe that. We haven't writen a single line of code yet.
 
-```
+```Cucumber
   Scenario: Customer logs in successfully
     Given a registrated customer with data
       | user name | password |
