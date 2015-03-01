@@ -226,17 +226,17 @@ Now we want to force strajah to store the registered customer so we write the fo
 We'll reuse most of the steps implemented previously
 
 ```
-Scenario: Unsuccessful registration - already registered customer with the same name
-  Given a registered customer with data
-    | user name | password |
-    | Ironman   | Av3ng3Rs |
-  When a not registered user requests to register with data
-    | user name | password     |
-    | Ironman   | I'm a clon!  |
-  Then the response code must be 401
-  And the customer is not able to log in with his credentials
-    | user name | password |
-    | Ironman   | Av3ng3Rs |
+    Scenario: Unsuccessful registration - already registered customer with the same name
+      Given a registered customer with data
+        | user name | password |
+        | Ironman   | Av3ng3Rs |
+      When a not registered user requests to register with data
+        | user name | password     |
+        | Ironman   | I'm a clon!  |
+      Then the response code must be 401
+      And the customer is not able to log in with his credentials
+        | user name | password     |
+        | Ironman   | I'm a clon!  |
 ```
 
 First failure we find: AssertionError: expected 201 to deeply equal 401
@@ -300,6 +300,129 @@ We can modify the registration middleware in order to fulfill the test
 
 
 We have one last thing to add to the registration middleware: the storage of the registrated customers.
+For that we'll verify that the persistance function is called exactly once with the same arguments as the ones provided in the request
+
+    it('Should store the customers and passwords', function () {
+        const request = mockRequest(),
+            response = mockResponse();
+
+        let deferred = q.defer();
+        let promise = deferred.promise;
+
+        let retrieveFromStorageStub = sinon.stub();
+        retrieveFromStorageStub.returns(promise);
+
+        let storageMock = sinon.mock();
+        storageMock.withArgs({name: request.body.name, password: request.body.password});
+
+        let registrationMiddleware = createRegistrationMiddleware(retrieveFromStorageStub, storageMock);
+        registrationMiddleware(request, response, function () {});
+
+        deferred.resolve();
+        promise.then(function () {
+            storageMock.verify();
+        });
+    });
+
+On the other hand in the middleware it's enough with adding just this line
+
+    persistOnStorage({name: request.body.name, password: request.body.password});
+
+Now we need to implement retrieveFromStorage.js and persistOnStorage.js, which were mocked for the registration middleware, but in a real server we'll need them. 
+Funny thing is, although the unit tests are running ok, strajah cannot even start now. When required, the registration looks up for retrieveFromStorage.js and persistOnStorage.js, and since these files doesn't even exist out server is pretty useless.
+
+As always we start with the test. For the persistOnStorageTest.js
+
+    it('Should be a function', function(){
+        _.isFunction(persistOnStorage).should.be.true;
+    });
+
+And the implementation
+
+    module.exports = function () {};
+
+For now our database will be a hashmap, so it won't be tested (go to /src/storage/ancientStorage.js) if you are curious.
+The second test will be check if the persistOnStorage calls this ancient database and really stores the given data
+
+    it('Should call the db publishValue method', function () {
+        let databaseStub = {
+            publishValue: function () {}
+        };
+
+        let databaseSpy = sinon.spy(databaseStub, 'publishValue');
+
+        let persistOnStorage = createPersistOnStorage(databaseStub);
+
+        const dataToPersist = {some: 'data'};
+        persistOnStorage(dataToPersist);
+
+        databaseSpy.calledOnce.should.be.true;
+        databaseSpy.args[0][0].should.deep.equal(dataToPersist);
+    });
+
+Since no further connection info is needed, in order to pass this test it will be enough with
+
+
+    module.exports = function (dataToPersist) {
+        database.publishValue(dataToPersist);
+    };
+
+
+That's all we're going to do about the persistence for now.
+
+And for the retrieveFromStorage.js, we're starting with a test to check if the returned object is a promise (more precisely, if there is any returned object)
+
+    it('Should return a promise', function () {
+        let retrieveFromStorage = require('../../src/storage/retrieveFromStorage.js');
+        let promise = retrieveFromStorage();
+
+        should.exist(promise);
+    });
+
+The simplest way to return a promise is using Q
+
+    module.exports = function () {
+        return q();
+    };
+
+
+And now we'll check that the retrieveFromStorage gives us exactly what it got from the ancient database. No transformation for now.
+
+    it('Should return retrieved data' , function (done) {
+        let storedData = 'store me';
+        let databaseStub = {
+            getValue: function () {
+                return storedData;
+            }
+        };
+
+        let retrieveFromStorage = createRetrieveFromStorage(databaseStub);
+        retrieveFromStorage().then(function (retrievedData){
+            retrievedData.should.not.be.undefined;
+            retrievedData.should.deep.equal(storedData);
+            done();
+        });
+    });
+
+To return the promise using Q
+
+    module.exports = function () {
+        return q(database.getValue());
+    };
+
+
+The search for existing customers with the same password is added as well to the login middleware.
+
+That's it for now with the persistance of the data with the registration process.
+Keep in mind that since we are using a database now (event with a hash!) we must clean it up after every scenario. 
+And we should do it as clean as possible: only the ancientDatabase.js knows about the hashmap that contains all customers. All other modules use it as something that magically stores data.
+And all conection logic is wrapped inside the two retrieveFromStorage.js and persistOnStorage.js files. When we put a real database only those two files will be changed.
+
+And as for the reset of the database done by the acceptance tests, for now it's ok the have it that way. If we ever have an official (backed by a feature) endpoint for customers removal, we ought use it instead.
+
+
+
+
 
 
 
