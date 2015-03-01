@@ -11,7 +11,7 @@ Start at the tag https://github.com/strajah/strajah/tree/ATDD-theGameOfCode
 # Doing a real registration process
 
 As for now Strajah has a heartbeat and a registration endpoint. Since we're using cucumber for writing the features please have a look at both features. 
-The registration feature just wants a 201 response code, and so that's ALL strajah do, sends back a 201 every time it is called. We want to improve that. We want a real registration process.
+The registration feature just expects a 201 response code, and so that's ALL strajah do, sends back a 201 every time it is called. We want to improve that. We want a real registration process.
 
 Adding a second step to check if the customer can log in after registration sounds like a good idea. 
 
@@ -36,7 +36,7 @@ Let's add another feature to describe that. We haven't writen a single line of c
       | user name | password |
       | Ironman   | Av3ng3Rs |
     When the customer "Ironman" logs in with password "Av3ng3Rs"
-    Then the response status code is 200
+    Then the response code must be 200
     And the response body has "accessToken" property
     
 
@@ -83,14 +83,67 @@ And for now the request body for the login will be
 
 Why not encrypt the body? Becouse there's no feature telling us to do so, and we don't like doing extra work.
 
+If we run now the acceptance tests we get passed though step 3 which is red right now:
+AssertionError: expected 404 to deeply equal 200
+
+That's because there's no '/api/auth/login' endpoint.
 
 
+### Third step: Then the response code must be 200
+
+This step is reused from previous features. But it is red, and we have to fix it.
+
+Let's write the endpoint code!! Auch... not yet. Unit test first, please. 
+
+We're only going to test the login middleware, the function which registers the endpoint won't be tested as it is considered covered by the acceptance tests.
+
+To turn this step green we need an 200 response code for the given endpoint.
+The first unit test is about calling the next function in restify, if not done the channel remains open and that's bad. 
+Using a simple mock object
+
+    it('must call the next function', function(done){
+        let res = {
+            send: function(){}
+        };
+
+        loginMiddleware(null, res, done);
+    });
+
+The code to make this unit test pass could be as simple as 
+
+    function login (request, response, next){
+        response.send();
+        return next();
+    }
+
+The next unit test verifies the response code
+
+    it('must send back a response', function(){
+        let obtainedStatusCode;
+
+        let res = {
+            send: function(value){
+                obtainedStatusCode = value;
+            }
+        };
+
+        loginMiddleware(null, res, function(){});
+        obtainedStatusCode.should.equal(200);
+    });
+
+To turn it green change the response.send() method adding a 200 argument to it
+
+    response.send(200);
+
+Even though the unit tests are passing we still need to register the endpoint in restify to make this third step green.
+
+    function registerIn (server) {
+        server.post('/api/auth/login', login);
+    }
 
 
-
-
-
-
+There are things that can not be tested by acceptance tests. Like the next function needed in restify. If we put it into the acceptance tests (like a step!) we would get coupled to the http library used in strajah. 
+The idea of acceptance tests for servers (using an API Rest interface) should be to make the glue code of the tests in another language, like Ruby, and they should still be green.
 
 
 
