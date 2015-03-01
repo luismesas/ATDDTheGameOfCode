@@ -455,7 +455,7 @@ To return the promise using Q
 The search for existing customers with the same password is added as well to the login middleware.
 
 That's it for now with the persistance of the data with the registration process.
-Keep in mind that since we are using a database now (event with a hash!) we must clean it up after every scenario. 
+Keep in mind that since we are using a database now (even with a hash!) we must clean it up after every scenario. 
 And we should do it as clean as possible: only the ancientDatabase.js knows about the hashmap that contains all customers. All other modules use it as something that magically stores data.
 And all conection logic is wrapped inside the two retrieveFromStorage.js and persistOnStorage.js files. When we put a real database only those two files will be changed.
 
