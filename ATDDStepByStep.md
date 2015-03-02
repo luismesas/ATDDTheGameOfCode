@@ -1,4 +1,4 @@
-Let's assume you've already read some ATDD philosophy articles, you're already convinced that it is the rigth way to code but now you want to see it in action.
+Let's assume you've already read some ATDD philosophy articles, you're already convinced that it is the right way to code but now you want to see it in action.
 
 We'll use [Strajah](https://github.com/strajah/strajah) as an example. The successor of cipherlayer, a security layer based on OAuth2. Strajah is build from scratch, so pretty we have some work to do until it can replace cipherlayer, feel free to contribute using your ATDD skills adquired in this tutorial.
 
