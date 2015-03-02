@@ -1,11 +1,11 @@
 Let's assume you've already read some ATDD philosophy articles, you're already convinced that it is the rigth way to code but now you want to see it in action.
 
-We'll use [Strajah](https://github.com/strajah/strajah) as an example. The successor of cipherlayer, a security layer based on Oauth 2. Strajah is build from scratch, so pretty we have some work to do until it can replace cipherlayer, feel free to contribute using your ATDD skills adquired in this tutorial.
+We'll use [Strajah](https://github.com/strajah/strajah) as an example. The successor of cipherlayer, a security layer based on OAuth2. Strajah is build from scratch, so pretty we have some work to do until it can replace cipherlayer, feel free to contribute using your ATDD skills adquired in this tutorial.
 
 
 
 
-Start at [this tag](https://github.com/strajah/strajah/tree/ATDD-theGameOfCode)
+Start at [this tag](https://github.com/strajah/strajah/tree/ATDD-theGameOfCode).
 
 
 # Doing a real registration process
@@ -71,7 +71,7 @@ For now we are going to do a POST to the registration endpoint.
 	}
 ```
 
-The only thing that we need to check here is that there aren't any conection errors. And we propagate the response body (via the world object) to the the other verifications later.
+The only thing that we need to check here is that there aren't any conection errors. And we propagate the response body (via the world object) to do the other verifications later.
 
 
 ### Second step: When the customer "Ironman" logs in with password "Av3ng3Rs"
@@ -86,7 +86,7 @@ And for now the request body for the login will be
     }
 ```
 
-Why not encrypt the body? Becouse there's no feature telling us to do so, and we don't like doing extra work.
+Why not encrypt the body? Because there's no feature telling us to do so, and we don't like doing extra work.
 
 If we run now the acceptance tests we get passed though step 3 which is red right now:
 AssertionError: expected 404 to deeply equal 200
