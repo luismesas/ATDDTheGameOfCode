@@ -34,7 +34,7 @@ Let's add another feature to describe that. We haven't writen a single line of c
 
 ```Cucumber
   Scenario: Customer logs in successfully
-    Given a registrated customer with data
+    Given a registered customer with data
       | user name | password |
       | Ironman   | Av3ng3Rs |
     When the customer "Ironman" logs in with password "Av3ng3Rs"
@@ -45,9 +45,9 @@ Let's add another feature to describe that. We haven't writen a single line of c
 For now that should be ok. Now we have a pretty good idea of want we have to do. 
 In ATDD we always start by writing the glue code, that is, the step definitions.
 
-### First step: Given a registrated customer with data
+### First step: Given a registered customer with data
 
-The first step is asking us to have a registrated customer in the system. We could archieve that in two ways: adding the customer to the database or by doing a POST to the registration endpoint. 
+The first step is asking us to have a registered customer in the system. We could archieve that in two ways: adding the customer to the database or by doing a POST to the registration endpoint. 
 The first option is usually bad, accessing the data base from the acceptance tests means doing a white box test, which tend to be less maintainable. And... did I mention we don't have a database yet?
 For now we are going to do a POST to the registration endpoint.
 ```JavaScript
@@ -321,7 +321,7 @@ We can modify the registration middleware in order to fulfill the test
 ```
 
 
-We have one last thing to add to the registration middleware: the storage of the registrated customers.
+We have one last thing to add to the registration middleware: the storage of the registered customers.
 For that we'll verify that the persistance function is called exactly once with the same arguments as the ones provided in the request
 
 ```JavaScript
